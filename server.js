@@ -3,13 +3,12 @@ let static = require("node-static");
 
 /*set up http server*/
 let http = require("http");
-const { dir } = require("console");
 
 /*run on heroku*/
 let port = process.env.PORT;
 let directory = __dirname + "/public";
 
-if ((port === "undefined") || (port === null)){
+if ((typeof port == "undefined") || (port === null)){
     port = 8080;
     directory = "./public";
 }
