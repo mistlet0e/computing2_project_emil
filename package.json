@@ -1,0 +1,23 @@
+{
+  "name": "reversi_tutorial",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mistlet0e/reversi_tutorial.git"
+  },
+  "author": "Emil Lau",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mistlet0e/reversi_tutorial/issues"
+  },
+  "homepage": "https://github.com/mistlet0e/reversi_tutorial#readme",
+  "dependencies": {
+    "node-static": "^0.7.11",
+    "socket.io": "^4.5.1"
+  }
+}
