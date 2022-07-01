@@ -231,17 +231,23 @@ io.on('connection', (socket) => {
             result: 'success'
         };
         socket.emit('plat_token_response', response);
+
         //main move execution
         if (color === 'white') {
             game.board[row][column] = 'w';
+            flip_tokens('w',row,column,game.board);
             game.whose_turn = 'black';
-            game.legal_moves = calculate_legal_move('b',game.board);
+            game.legal_moves = calculate_legal_moves('b',game.board);
         }
         else if (color === 'black') {
             game.board[row][column] = 'b';
+            flip_tokens('b',row,column,game.board);
             game.whose_turn = 'white';
-            game.legal_moves = calculate_legal_move('w',game.board);
+            game.legal_moves = calculate_legal_moves('w',game.board);
         }
+        let d = new Date();
+        game.last_move_time = d.getTime();
+        
 
         send_game_update(socket, game_id, 'played a token');
     });
@@ -615,13 +621,17 @@ function create_new_game() {
         [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
     ];
 
-    new_game.legal_move = calculate_legal_move('b', new_game.board);
+    new_game.legal_moves = calculate_legal_moves('b', new_game.board);
     return new_game;
 }
 
 function check_line_match(color, dr, dc, r, c, board) {
     if (board[r][c] === color) {
         return true;
+    }
+    //space between
+    if (board[r][c] === ' ') {
+        return false;
     }
     //check wont go off the board
     if ((r + dr < 0) || (r + dr > 7)) {
@@ -672,7 +682,7 @@ function adjacent_support(who, dr, dc, r, c, board) {
     return check_line_match(who, dr, dc, r + dr + dr, c + dc + dc, board);
 }
 
-function calculate_legal_move(who, board) {
+function calculate_legal_moves(who, board) {
     let legal_moves = [
         [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
         [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '],
@@ -688,19 +698,19 @@ function calculate_legal_move(who, board) {
         for (let column = 0; column < 8; column++) {
             if (board[row][column] === ' ') {
                 // -1 == move up one row i.e. north
-                nn = adjacent_support(who, -1, 0, row, column, board)
+                nn = adjacent_support(who, -1, 0, row, column, board);
                 // 1 == move right one column i.e. east
-                ee = adjacent_support(who, 0, 1, row, column, board)
+                ee = adjacent_support(who, 0, 1, row, column, board);
                 // 1 == move down one row i.e. south
-                ss = adjacent_support(who, 1, 0, row, column, board)
+                ss = adjacent_support(who, 1, 0, row, column, board);
                 // -1 == move left one column i.e. west
-                ww = adjacent_support(who, 0, -1, row, column, board)
+                ww = adjacent_support(who, 0, -1, row, column, board);
 
                 //diagonal
-                nw = adjacent_support(who, -1, -1, row, column, board)
-                ne = adjacent_support(who, -1, 1, row, column, board)
-                sw = adjacent_support(who, 1, -1, row, column, board)
-                se = adjacent_support(who, 1, 1, row, column, board)
+                nw = adjacent_support(who, -1, -1, row, column, board);
+                ne = adjacent_support(who, -1, 1, row, column, board);
+                sw = adjacent_support(who, 1, -1, row, column, board);
+                se = adjacent_support(who, 1, 1, row, column, board);
                 if (nn || ee || ss || ww || nw || ne || sw || se) {
                     legal_moves[row][column] = who;
                 }
@@ -709,6 +719,48 @@ function calculate_legal_move(who, board) {
         }
     }
     return legal_moves;
+}
+
+function flip_line(who ,dr ,dc ,r, c, board){
+    //if it is off the board
+    if ((r + dr < 0) || (r + dr > 7)) {
+        return false;
+    }
+    if ((c + dc < 0) || (c + dc > 7)) {
+        return false;
+    }
+    if (board[r + dr][c + dc] === ' ') {
+        return false;
+    }
+    if (board[r + dr][c + dc] === who) {
+        return true;
+    }
+    else{
+        if(flip_line(who,dr,dc,r+dr,c+dc,board)){
+            board[r+dr][c+dc] = who;
+            return true;
+        }
+        else{
+            return false;
+        }
+    }
+}
+
+function flip_tokens(who, row, column, board){
+    // -1 == move up one row i.e. north
+    flip_line(who, -1, 0, row, column, board);
+    // 1 == move right one column i.e. east
+    flip_line(who, 0, 1, row, column, board);
+    // 1 == move down one row i.e. south
+    flip_line(who, 1, 0, row, column, board);
+    // -1 == move left one column i.e. west
+    flip_line(who, 0, -1, row, column, board);
+
+    //diagonal
+    flip_line(who, -1, -1, row, column, board);
+    flip_line(who, -1, 1, row, column, board);
+    flip_line(who, 1, -1, row, column, board);
+    flip_line(who, 1, 1, row, column, board);
 }
 
 function send_game_update(socket, game_id, message) {
@@ -779,20 +831,35 @@ function send_game_update(socket, game_id, message) {
 
     //chk if the game is over
 
-    let count = 0;
+    let legal_moves = 0;
+    let whitesum = 0;
+    let blacksum = 0;
     for (let row = 0; row < 8; row++) {
         for (let column = 0; column < 8; column++) {
-            if (games[game_id].board[row][column] != ' ') {
-                count++;
+            if (games[game_id].legal_moves[row][column] !== ' ') {
+                legal_moves++;
+            }
+            if (games[game_id].board[row][column] === 'w') {
+                whitesum++;
+            }
+            if (games[game_id].board[row][column] === 'b') {
+                blacksum++;
             }
         }
     }
-    if (count === 64) {
+    if (legal_moves === 0) {
+        let winner = "Tie Game";
+        if(whitesum > blacksum){
+            winner = "white";
+        }
+        if (whitesum < blacksum){
+            winner = "black";
+        }
         let payload = {
             result: 'success',
             game_id: game_id,
             game: games[game_id],
-            who_won: 'everyone'
+            who_won: winner
         }
         io.in(game_id).emit('game_over', payload);
 

@@ -232,6 +232,8 @@ let old_board = [
 
 let my_color = "";
 
+let interval_timer;
+
 socket.on('game_update', (payload) => {
     if ((typeof payload == 'undefined') || (payload === null)) {
         console.log('Server did not send a payload');
@@ -343,9 +345,13 @@ socket.on('game_update', (payload) => {
                 }
                 const t = Date.now();
                 $('#' + row + '_' + column).html('<img class="img-fluid" src="assets/images/' + graphic + '?time=' + t + '" alt="' + altTag + '" style="border: 0.5px solid black;"/>');
+            }
+            //setup interactivity
 
-                $('#' + row + '_' + column).off('click');
-                if (board[row][column] === ' ') {
+            $('#' + row + '_' + column).off('click');
+            $('#' + row + '_' + column).removeClass('hovered_over');
+            if (payload.game.whose_turn === my_color) {
+                if (payload.game.legal_moves[row][column] === my_color.substr(0, 1)) {
                     $('#' + row + '_' + column).addClass('hovered_over');
                     $('#' + row + '_' + column).click(((r, c) => {
                         return (() => {
@@ -356,28 +362,27 @@ socket.on('game_update', (payload) => {
                             };
                             console.log('**** Client log message, sending \'play_token\' command: ' + JSON.stringify(payload));
                             socket.emit('play_token', payload);
-
                         });
                     })(row, column));
-                }
-                else {
-                    $('#' + row + '_' + column).removeClass('hovered_over');
+                    }
                 }
             }
         }
-    }
-    // for (let row = 0; row < 8; row++) {
-    //     for (let column = 0; column < 8; column++){
-    //         if ((board[row][column] === ' ') || (board[row][column] == ' ')){
-    //             //$('#'+row+'_'+column).replaceWith('<img class="img-fluid" src="assets/images/error.gif"/>');
-    //             $('#'+row+'_'+column).addClass('hovered_over');
-    //         }
-    //     }
-    // }
-    $('#whitesum').html(whitesum);
-    $('#blacksum').html(blacksum);
-    old_board = board;
-});
+        clearInterval(interval_timer);
+        interval_timer = setInterval(((last_time) => {
+            return ( () => {
+                let d = new Date();
+                let elapse_m = d.getTime() - last_time;
+                let minutes = Math.floor(elapse_m
+            })
+        })(payload.game.last_move_time)
+            , 1000);
+
+        $('#whitesum').html(whitesum);
+        $('#blacksum').html(blacksum);
+        old_board = board;
+    });
+
 
 
 socket.on('play_token_response', (payload) => {
