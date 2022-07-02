@@ -1,3 +1,10 @@
+/**
+ * server is a module to load and save game stats and Elo ratings
+ * for reversi games.
+ * @namespace reversi
+ * @author Emil Lau
+ * @version 2022
+ */
 /*set up static file server*/
 let static_server = require("node-static");
 
@@ -32,6 +39,11 @@ const { Server } = require("socket.io");
 const { ppid } = require("process");
 const io = new Server(app);
 
+/** main moudle where the functions are made when connection of the socket are connected
+ * @name connection
+ * @memberof reversi
+ * @param {socket} socket conncetion from the client
+ */
 io.on('connection', (socket) => {
 
     /**
@@ -66,6 +78,15 @@ io.on('connection', (socket) => {
     //     'message': reason for failure,
 
     // }
+
+    /** send chat message moudle where it allows user to
+     * input chat message and broadcast
+     * @name send_chat_message
+     * @memberof reversi
+     * @function 
+     * @param {payload} payload information from the client
+     * @return {response} either fail or output 
+     */
     socket.on('send_chat_message', (payload) => {
         serverLog('Server received a commend', '\'send_chat_message\'', JSON.stringify(payload));
         //reject if no payload
@@ -123,6 +144,14 @@ io.on('connection', (socket) => {
 
 
     //token response
+    /** function that handles token response when the user would like to 
+     * user would like to place token on the board
+     * @name play_token
+     * @memberof reversi
+     * @function 
+     * @param {payload} payload information from the client
+     * @return {null | response}
+     */
     socket.on('play_token', (payload) => {
         serverLog('Server received a commend', '\'play_token\'', JSON.stringify(payload));
         //reject if no payload
@@ -274,6 +303,15 @@ io.on('connection', (socket) => {
 
     // }
 
+    /** allow user to join room,
+     * either lobby or game room
+     * @name join_room
+     * @memberof reversi
+     * @function 
+     * @param {payload} payload information from the client
+     * @return {response} either fail or output response that include
+     * result, socket_id, room, username, count
+     */
     socket.on('join_room', (payload) => {
         serverLog('Server received a commend', '\'join_room\'', JSON.stringify(payload));
         //reject if no payload
@@ -347,6 +385,15 @@ io.on('connection', (socket) => {
         });
     });
 
+    /** allow user to invite other user
+     * to play a game
+     * @name invite
+     * @memberof reversi
+     * @function 
+     * @param {payload} payload information from the client
+     * @return {response} either fail or output response that include
+     * result, socket_id
+     */
     socket.on('invite', (payload) => {
         serverLog('Server received a commend', '\'invite\'', JSON.stringify(payload));
         //reject if no payload
@@ -423,6 +470,15 @@ io.on('connection', (socket) => {
         });
     });
 
+    /** allow user to uninvite other user
+     * to play a game
+     * @name uninvite
+     * @memberof reversi
+     * @function 
+     * @param {payload} payload information from the client
+     * @return {response} either fail or output response that include
+     * result, socket_id
+     */
     socket.on('uninvite', (payload) => {
         serverLog('Server received a commend', '\'uninvite\'', JSON.stringify(payload));
         //reject if no payload
@@ -499,6 +555,15 @@ io.on('connection', (socket) => {
         });
     });
 
+    /** function to call when the game ha began
+     * initalization of the board and game logic
+     * @name game_start
+     * @memberof reversi
+     * @function 
+     * @param {payload} payload information from the client
+     * @return {response} either fail or output response that include
+     * result, game_id, socket_id
+     */
     socket.on('game_start', (payload) => {
         serverLog('Server received a commend', '\'game_start\'', JSON.stringify(payload));
         //reject if no payload
@@ -572,6 +637,12 @@ io.on('connection', (socket) => {
         });
     });
 
+    /** function to disconnect the user
+     * @name disconnect
+     * @memberof reversi
+     * @function 
+     * @return {null} either fail or output response that include
+     */
     socket.on('disconnect', () => {
         serverLog('a page disconnected to the server: ' + socket.id);
         if ((typeof players[socket.id] != 'undefined') && (players[socket.id] != null)) {
@@ -596,11 +667,16 @@ io.on('connection', (socket) => {
 
 
 
+
+
 //code related to game state
 
 let games = [];
 /**
  * Initalize the condition of the new game
+ * @name create_new_game
+ * @memberof reversi
+ * @function
  * @returns { new_game }
  */
 function create_new_game() {
@@ -632,12 +708,14 @@ function create_new_game() {
 }
 /**
  * check if the line is a legal line that where the middle part could be flipped
+ * @name check_line_match
+ * @memberof reversi
  * @param {('w' | 'b')} color of the player
- * @param {*} dr change in row
- * @param {*} dc change in column
- * @param {*} r row that ur token is placing
- * @param {*} c column that ur token is placing
- * @param {*} board the board to check
+ * @param {int} dr change in row
+ * @param {int} dc change in column
+ * @param {int} r row that ur token is placing
+ * @param {int} c column that ur token is placing
+ * @param {game.board} board the board to check
  * @returns {function}
  */
 function check_line_match(color, dr, dc, r, c, board) {
@@ -661,14 +739,17 @@ function check_line_match(color, dr, dc, r, c, board) {
 
 
 /**
- * check for if the moves are withing the board range, return true if r+dr supports playing at r and c+dc supports playing at c
+ * check for if the moves are withing the board range,
+ * return true if r+dr supports playing at r and c+dc supports playing at c
+ * @name adjacent_support
+ * @memberof reversi
  * @function
- * @param {*} who which color is playing right now
- * @param {*} dr changes in row
- * @param {*} dc changes in column
- * @param {*} r row that ur token is placing
- * @param {*} c column that ur token is placing
- * @param {*} board the board to check
+ * @param {'w' | 'b'} who which color is playing right now
+ * @param {int} dr changes in row
+ * @param {int} dc changes in column
+ * @param {int} r row that ur token is placing
+ * @param {int} c column that ur token is placing
+ * @param {game.board} board the board to check
  * @returns {function}
  */
 function adjacent_support(who, dr, dc, r, c, board) {
@@ -709,9 +790,13 @@ function adjacent_support(who, dr, dc, r, c, board) {
 }
 
 /**
- * based on the color of the current token, output all options that are available for a legal move
- * @param {*} who which color is playing right now
- * @param {*} board the board to check
+ * based on the color of the current token,
+ * output all options that are available for a legal move
+ * @name calculate_legal_moves
+ * @memberof reversi
+ * @function
+ * @param {'w' | 'b'} who which color is playing right now
+ * @param {game.board} board the board to check
  * @returns {legal_moves} position of the moves that was possible for that board for that color
  */
 function calculate_legal_moves(who, board) {
@@ -753,13 +838,17 @@ function calculate_legal_moves(who, board) {
     return legal_moves;
 }
 /**
- * check for the line where the token would need to be flipped, checking for eight directions respectively
- * @param {*} who which color is playing right now
- * @param {*} dr changes in row
- * @param {*} dc changes in column
- * @param {*} r row that ur token is placing
- * @param {*} c column that ur token is placing
- * @param {*} board the board to check
+ * check for the line where the token would need to be flipped,
+ * checking for eight directions respectively
+ * @name flip_line
+ * @memberof reversi
+ * @function
+ * @param {'w' | 'b'} who which color is playing right now
+ * @param {int} dr changes in row
+ * @param {int} dc changes in column
+ * @param {int} r row that ur token is placing
+ * @param {int} c column that ur token is placing
+ * @param {game.board} board the board to check
  * @returns { true | false }
  */
 function flip_line(who ,dr ,dc ,r, c, board){
@@ -789,10 +878,13 @@ function flip_line(who ,dr ,dc ,r, c, board){
 
 /**
  * flip token with the aid of flip_line function
- * @param {*} who which color is playing right now
- * @param {*} row the row that ur token is placing
- * @param {*} column the column that ur token is placing
- * @param {*} board the board to check
+ * @name flip_tokens
+ * @memberof reversi
+ * @function
+ * @param {'w' | 'b'} who which color is playing right now
+ * @param {int} row the row that ur token is placing
+ * @param {int} column the column that ur token is placing
+ * @param {game.board} board the board to check
  */
 function flip_tokens(who, row, column, board){
     // -1 == move up one row i.e. north
@@ -814,7 +906,11 @@ function flip_tokens(who, row, column, board){
 /**
  * constantly send game update to the specific socket,
  * assign colors to two players and
- * determines winning condition (either when the board is full or there is no legal moves left)
+ * determines winning condition
+ * (either when the board is full or there is no legal moves left)
+ * @name send_game_update
+ * @memberof reversi
+ * @function
  * @param {*} socket the socket of the joining player
  * @param {*} game_id the game room that has created
  */
